@@ -1,7 +1,4 @@
-// Variable para almacenar los registros temporalmente
 let registrosSalud = [];
-
-// PIN por defecto (puedes cambiarlo aquí)
 const PIN_CORRECTO = "1234";
 
 function verificarPIN() {
@@ -11,7 +8,6 @@ function verificarPIN() {
     if (pinIngresado === PIN_CORRECTO) {
         document.getElementById("pantalla-pin").style.display = "none";
         document.getElementById("contenido-principal").style.display = "block";
-        notificarServidor("Acceso exitoso al sistema");
     } else {
         errorMsg.innerText = "❌ PIN Incorrecto. Inténtalo de nuevo.";
     }
@@ -29,9 +25,7 @@ function guardarRegistro() {
 
     const nuevoRegistro = { fecha, fase, emocion };
     registrosSalud.push(nuevoRegistro);
-
     alert("✅ Registro guardado con éxito.");
-    notificarServidor(`Nuevo registro el día ${fecha}: ${fase} - ${emocion}`);
     actualizarVistaReporte();
 }
 
@@ -41,7 +35,6 @@ function actualizarVistaReporte() {
         contenedorReporte.innerText = "No hay registros guardados este mes.";
         return;
     }
-
     let textoReporte = "📋 REPORTE MENSUAL DE SALUD\n\n";
     registrosSalud.forEach(r => {
         textoReporte += `🔹 Fecha: ${r.fecha} | Estado: ${r.fase} | Emoción: ${r.emocion}\n`;
@@ -54,31 +47,17 @@ function exportarReporte() {
         alert("No hay datos para exportar.");
         return;
     }
-
-    let textoReporte = "📋 REPORTE MENSUAL DE BIENESTAR Y SALUD\n";
-    textoReporte += "Generado para revisión médica.\n\n";
+    let textoReporte = "📋 REPORTE MENSUAL DE BIENESTAR Y SALUD\nGenerado para revisión médica.\n\n";
     registrosSalud.forEach(r => {
         textoReporte += `- Fecha: ${r.fecha} | Ciclo: ${r.fase} | Síntoma/Emoción: ${r.emocion}\n`;
     });
-
-    // Crear un archivo de texto descargable automáticamente
     const blob = new Blob([textoReporte], { type: "text/plain;charset=utf-8" });
     const enlace = document.createElement("a");
     enlace.href = URL.createObjectURL(blob);
     enlace.download = "Reporte_Salud_Mensual.txt";
     enlace.click();
-    notificarServidor("Reporte de salud exportado en archivo TXT");
 }
 
 function irInicio() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// Función para conectar el backend con las alertas del Bot
-function notificarServidor(mensaje) {
-    fetch('/api/alerta', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accion: mensaje })
-    }).catch(err => console.log("Servidor offline o sin bot configurado todavía."));
 }
