@@ -4,7 +4,7 @@ app = Flask(__name__, template_folder='.', static_folder='static')
 
 @app.route('/')
 def home():
-    return render_template('index.html.txt')
+    return render_template('index.html')
 
 @app.route('/api/alerta', methods=['POST'])
 def alerta():
