@@ -1,16 +1,181 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask
 
-app = Flask(__name__, template_folder='.', static_folder='static')
+app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return '''
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mi Calendario de Bienestar</title>
+        <style>
+            body { font-family: Arial, sans-serif; background-color: #f9f5f7; margin: 0; padding: 0; }
+            .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+            .login-box { text-align: center; padding: 30px; border: 1px solid #ccc; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+            .login-box input { padding: 10px; font-size: 16px; width: 80px; text-align: center; margin-bottom: 15px; }
+            .login-box button { padding: 10px 20px; background-color: #d4a5b8; color: white; border: none; border-radius: 4px; cursor: pointer; }
+            .error { color: red; font-size: 14px; margin-top: 10px; }
+            .navbar { background-color: #d4a5b8; padding: 15px; color: white; display: flex; justify-content: space-between; }
+            .logo { font-weight: bold; cursor: pointer; }
+            .nav-links { list-style: none; display: flex; margin: 0; padding: 0; }
+            .nav-links li { margin-left: 20px; }
+            .nav-links a { color: white; text-decoration: none; }
+            .hero { text-align: center; padding: 40px 20px; background: #f0e1e7; }
+            .contenedor { max-width: 800px; margin: 20px auto; padding: 0 20px; }
+            .tarjeta { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+            .formulario-grupo { margin-bottom: 15px; }
+            .formulario-grupo label { display: block; margin-bottom: 5px; font-weight: bold; }
+            .formulario-grupo input, .formulario-grupo select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+            .btn-guardar, .btn-reporte { padding: 10px 20px; background: #b87d93; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+            .vista-reporte { background: #f5f5f5; padding: 15px; margin-top: 15px; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+            .footer { text-align: center; padding: 20px; color: #777; font-size: 14px; }
+        </style>
+    </head>
+    <body>
 
-@app.route('/api/alerta', methods=['POST'])
-def alerta():
-    datos = request.json
-    print(f"Alerta recibida: {datos.get('accion')}")
-    return jsonify({"status": "recibido"}), 200
+        <div id="pantalla-pin" class="overlay">
+            <div class="login-box">
+                <h2>🔒 Acceso Privado</h2>
+                <p>Ingresa tu PIN de seguridad para continuar</p>
+                <input type="password" id="pin-input" maxlength="4" placeholder="0000">
+                <br>
+                <button onclick="verificarPIN()">Ingresar</button>
+                <p id="error-pin" class="error"></p>
+            </div>
+        </div>
+
+        <div id="contenido-principal" style="display: none;">
+            <nav class="navbar">
+                <div class="logo" onclick="irInicio()">🌸 Control de Bienestar</div>
+                <ul class="nav-links">
+                    <li><a href="#" onclick="irInicio()">Inicio</a></li>
+                    <li><a href="#seccion-calendario">Calendario</a></li>
+                    <li><a href="#seccion-reporte">Reportes</a></li>
+                </ul>
+            </nav>
+
+            <header class="hero">
+                <h1>Tu espacio seguro para el ciclo menstrual y emocional</h1>
+                <p>Registra tus síntomas, monitorea tus emociones y descarga reportes médicos con total privacidad.</p>
+            </header>
+
+            <main class="contenedor">
+                <section id="seccion-calendario" class="tarjeta">
+                    <h2>📅 Registro Diario</h2>
+                    <div class="formulario-grupo">
+                        <label for="fecha">Selecciona la Fecha:</label>
+                        <input type="date" id="fecha">
+                    </div>
+                    
+                    <div class="formulario-grupo">
+                        <label for="fase">Estado del Ciclo:</label>
+                        <select id="fase">
+                            <option value="Periodo / Menstruación">Periodo / Menstruación</option>
+                            <option value="Fase Folicular">Fase Folicular</option>
+                            <option value="Ovulación">Ovulación</option>
+                            <option value="Fase Lútea">Fase Lútea</option>
+                        </select>
+                    </div>
+
+                    <div class="formulario-grupo">
+                        <label for="emocion">Estado Emocional:</label>
+                        <select id="emocion">
+                            <option value="😊 Feliz / Con Energía">😊 Feliz / Con Energía</option>
+                            <option value="😴 Cansada / Relajada">😴 Cansada / Relajada</option>
+                            <option value="😢 Sensible / Triste">😢 Sensible / Triste</option>
+                            <option value="😠 Irritada / Estresada">😠 Irritada / Estresada</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-guardar" onclick="guardarRegistro()">Guardar Día</button>
+                </section>
+
+                <section id="seccion-reporte" class="tarjeta">
+                    <h2>📋 Reporte para tu Médico</h2>
+                    <p>Genera un resumen ordenado de tus síntomas registrados para exportarlo de forma sencilla.</p>
+                    <button class="btn-reporte" onclick="exportarReporte()">Generar y Exportar Reporte</button>
+                    <div id="vista-reporte" class="vista-reporte">No hay registros guardados este mes.</div>
+                </section>
+            </main>
+
+            <footer class="footer">
+                <p>© 2026 - Creado por Estudiante de Ofimática</p>
+            </footer>
+        </div>
+
+        <script>
+            let registrosSalud = [];
+            const PIN_CORRECTO = "1234";
+
+            function verificarPIN() {
+                const pinIngresado = document.getElementById("pin-input").value;
+                const errorMsg = document.getElementById("error-pin");
+
+                if (pinIngresado === PIN_CORRECTO) {
+                    document.getElementById("pantalla-pin").style.display = "none";
+                    document.getElementById("contenido-principal").style.display = "block";
+                } else {
+                    errorMsg.innerText = "❌ PIN Incorrecto. Inténtalo de nuevo.";
+                }
+            }
+
+            function guardarRegistro() {
+                const fecha = document.getElementById("fecha").value;
+                const fase = document.getElementById("fase").value;
+                const emocion = document.getElementById("emocion").value;
+
+                if (!fecha) {
+                    alert("Por favor selecciona una fecha.");
+                    return;
+                }
+
+                const nuevoRegistro = { fecha, fase, emocion };
+                registrosSalud.push(nuevoRegistro);
+                alert("✅ Registro guardado con éxito.");
+                actualizarVistaReporte();
+            }
+
+            function actualizarVistaReporte() {
+                const contenedorReporte = document.getElementById("vista-reporte");
+                if (registrosSalud.length === 0) {
+                    contenedorReporte.innerText = "No hay registros guardados este mes.";
+                    return;
+                }
+                let textoReporte = "📋 REPORTE MENSUAL DE SALUD\\n\\n";
+                registrosSalud.forEach(r => {
+                    textoReporte += `🔹 Fecha: ${r.fecha} | Estado: ${r.fase} | Emoción: ${r.emocion}\\n`;
+                });
+                contenedorReporte.innerText = textoReporte;
+            }
+
+            document.addEventListener("DOMContentLoaded", function() {
+                window.exportarReporte = function() {
+                    if (registrosSalud.length === 0) {
+                        alert("No hay datos para exportar.");
+                        return;
+                    }
+                    let textoReporte = "📋 REPORTE MENSUAL DE BIENESTAR Y SALUD\\n\\n";
+                    registrosSalud.forEach(r => {
+                        textoReporte += `- Fecha: ${r.fecha} | Ciclo: ${r.fase} | Síntoma/Emoción: ${r.emocion}\\n`;
+                    });
+                    const blob = new Blob([textoReporte], { type: "text/plain;charset=utf-8" });
+                    const enlace = document.createElement("a");
+                    enlace.href = URL.createObjectURL(blob);
+                    enlace.download = "Reporte_Salud_Mensual.txt";
+                    enlace.click();
+                }
+            });
+
+            function irInicio() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        </script>
+    </body>
+    </html>
+    '''
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
